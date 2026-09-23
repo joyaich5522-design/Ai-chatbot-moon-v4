@@ -349,8 +349,13 @@ local function createSettingsTab(name)
     panel.Position = UDim2.new(0, 8, 0, 62)
     panel.BackgroundTransparency = 1
     panel.Visible = false
-    panel.CanvasSize = UDim2.new(0, 0, 0, 200)
+    panel.CanvasSize = UDim2.new(0, 0, 0, 0)
+    panel.AutomaticCanvasSize = Enum.AutomaticSize.Y
     panel.ScrollBarThickness = 2
+    
+    local panelLayout = Instance.new("UIListLayout", panel)
+    panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    panelLayout.Padding = UDim.new(0, 6)
     
     tabButtons[name] = btn
     tabPanels[name] = panel
@@ -434,12 +439,9 @@ Instance.new("UICorner", PromptInputBox).CornerRadius = UDim.new(0, 4)
 PromptInputBox.FocusLost:Connect(function() CustomSystemPromptOverride = PromptInputBox.Text end)
 
 -- Provider Panel
-local ProviderGrid = Instance.new("UIGridLayout", ProviderPanel)
-ProviderGrid.CellSize = UDim2.new(1, 0, 0, 26)
-ProviderGrid.CellPadding = UDim2.new(0, 0, 0, 4)
-
 local function createModelOption(name, path)
     local btn = Instance.new("TextButton", ProviderPanel)
+    btn.Size = UDim2.new(1, 0, 0, 26)
     btn.BackgroundColor3 = SELECTED_MODEL_PATH == path and Color3.fromRGB(70, 110, 240) or Color3.fromRGB(30, 35, 45)
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -496,7 +498,7 @@ ToggleBtn.Activated:Connect(function()
     ChatWindow.Visible = true
 end)
 
--- UI Messaging Helper Functions (With Error Printing for Execution)
+-- UI Messaging Helper Functions (Fixed Width & Sizing Fallback)
 local function appendMessage(sender, text)
     local isUser = (sender == "You")
     
@@ -508,181 +510,205 @@ local function appendMessage(sender, text)
     local bubble = Instance.new("Frame", msgFrame)
     bubble.BackgroundColor3 = isUser and Color3.fromRGB(30, 45, 75) or Color3.fromRGB(35, 40, 55)
     bubble.BorderSizePixel = 0
-    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
     
-    local textLabel = Instance.new("TextLabel", buble)
-textLabel.Size = UDim2.new(1, -16, 1, -12)
-textLabel.Position = UDim2.new(0, 8, 0, 6)
-textLabel.BackgroundTransparency = 1
-textLabel.Text = text
-textLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
-textLabel.Font = Enum.Font.Gotham
-textLabel.TextSize = 10
-textLabel.TextWrapped = true
-textLabel.TextXAlignment = Enum.TextXAlignment.Left
-textLabel.TextYAlignment = Enum.TextYAlignment.Top
-local padding = 16
-local textSize = TextService:GetTextSize(text, 10, Enum.Font.Gotham, Vector2.new(ChatScroll.AbsoluteSize.X - 24, math.huge))
-local totalHeight = math.max(26, textSize.Y + padding)
-bubble.Size = UDim2.new(0, ChatScroll.AbsoluteSize.X - 12, 0, totalHeight)
-bubble.Position = isUser and UDim2.new(1, -bubble.AbsoluteSize.X - 4, 0, 0) or UDim2.new(0, 4, 0, 0)
-msgFrame.Size = UDim2.new(1, 0, 0, totalHeight + 6)
-ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 10)
-ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Scale * ChatScroll.AbsoluteSize.Y + ChatScroll.CanvasSize.Y.Offset)
--- If it's a response from Moon AI containing code, add an Execution Button
-if sender == "Moon AI" then
-local cleaned = cleanCodeString(text)
-if cleaned:match("game:") or cleaned:match("local%s+") or cleaned:match("function") then
-local execBtn = Instance.new("TextButton", bubble)
-execBtn.Size = UDim2.new(0, 80, 0, 20)
-execBtn.Position = UDim2.new(1, -85, 1, -22)
-execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
-execBtn.Text = "▶ Execute"
-execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-execBtn.Font = Enum.Font.GothamBold
-execBtn.TextSize = 9
-Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
-execBtn.Activated:Connect(function()
-local success, err = executeScript(text)
-if success then
-execBtn.Text = "✔ Executed"
-execBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 90)
-task.delay(1.5, function()
-if execBtn.Parent then
-execBtn.Text = "▶ Execute"
-execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+    local textLabel = Instance.new("TextLabel", bubble)
+    textLabel.Size = UDim2.new(1, -16, 1, -12)
+    textLabel.Position = UDim2.new(0, 8, 0, 6)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 10
+    textLabel.TextWrapped = true
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Top
+    
+    local padding = 16
+    local availableWidth = ChatScroll.AbsoluteSize.X > 20 and (ChatScroll.AbsoluteSize.X - 12) or 390
+    local textSize = TextService:GetTextSize(text, 10, Enum.Font.Gotham, Vector2.new(availableWidth - 16, math.huge))
+    local totalHeight = math.max(26, textSize.Y + padding)
+    
+    bubble.Size = UDim2.new(0, availableWidth, 0, totalHeight)
+    bubble.Position = isUser and UDim2.new(1, -bubble.AbsoluteSize.X - 4, 0, 0) or UDim2.new(0, 4, 0, 0)
+    msgFrame.Size = UDim2.new(1, 0, 0, totalHeight + 6)
+    
+    ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 10)
+    ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Scale * ChatScroll.AbsoluteSize.Y + ChatScroll.CanvasSize.Y.Offset)
+    
+    if sender == "Moon AI" then
+        local cleaned = cleanCodeString(text)
+        if cleaned:match("game:") or cleaned:match("local%s+") or cleaned:match("function") then
+            local execBtn = Instance.new("TextButton", bubble)
+            execBtn.Size = UDim2.new(0, 80, 0, 20)
+            execBtn.Position = UDim2.new(1, -85, 1, -22)
+            execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+            execBtn.Text = "▶ Execute"
+            execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            execBtn.Font = Enum.Font.GothamBold
+            execBtn.TextSize = 9
+            Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
+            
+            execBtn.Activated:Connect(function()
+                local success, err = executeScript(text)
+                if success then
+                    execBtn.Text = "✔ Executed"
+                    execBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 90)
+                    task.delay(1.5, function()
+                        if execBtn.Parent then
+                            execBtn.Text = "▶ Execute"
+                            execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+                        end
+                    end)
+                else
+                    execBtn.Text = "✖ Error"
+                    execBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+                    warn("[Moon AI Error]: " .. tostring(err))
+                    task.delay(2, function()
+                        if execBtn.Parent then
+                            execBtn.Text = "▶ Execute"
+                            execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+                        end
+                    end)
+                end
+            end)
+        end
+    end
 end
-end)
-else
-execBtn.Text = "✖ Error"
-execBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-warn("[Moon AI Error]: " + tostring(err))
-task.delay(2, function()
-if execBtn.Parent then
-execBtn.Text = "▶ Execute"
-execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
-end
-end)
-end
-end)
-end
-end
-end
+
 -- Network Request Function to Gemini API
 local function sendToGemini(userPrompt)
-local apiKey = APIInput.Text
-if apiKey == "" then
-appendMessage("System", "Error: API Key is missing. Please enter it in the setup window.")
-return
+    local apiKey = APIInput.Text
+    if apiKey == "" then
+        appendMessage("System", "Error: API Key is missing. Please enter it in the setup window.")
+        return
+    end
+    
+    local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
+    local envContext = scanGameEnvironment()
+    local fullPrompt = envContext .. "\n\nUser Request: " .. userPrompt
+    
+    table.insert(ConversationHistory, {
+        role = "user",
+        parts = {{ text = fullPrompt }}
+    })
+    
+    if #ConversationHistory > MAX_HISTORY_ENTRIES then
+        table.remove(ConversationHistory, 1)
+        table.remove(ConversationHistory, 1)
+    end
+    
+    local payload = {
+        system_instruction = {
+            parts = {{ text = systemInstruction }}
+        },
+        contents = ConversationHistory
+    }
+    
+    local baseUrl = (CustomBaseURL ~= "") and CustomBaseURL or "https://generativelanguage.googleapis.com/v1beta/"
+    local url = baseUrl .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. apiKey
+    
+    task.spawn(function()
+        local success, response = pcall(function()
+            return HttpService:JSONEncode(payload)
+        end)
+        
+        if not success then
+            appendMessage("System", "JSON Encode Error: " .. tostring(response))
+            return
+        end
+        
+        local requestFunc = syn and syn.request or http_request or request or HttpPost
+        if not requestFunc then
+            appendMessage("System", "Error: Executor does not support HTTP requests.")
+            return
+        end
+        
+        local reqSuccess, reqResult = pcall(function()
+            return requestFunc({
+                Url = url,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = response
+            })
+        end)
+        
+        if not reqSuccess or not reqResult then
+            appendMessage("System", "Network Request Failed.")
+            return
+        end
+        
+        local decodeSuccess, decoded = pcall(function()
+            return HttpService:JSONDecode(reqResult.Body)
+        end)
+        
+        if not decodeSuccess or not decoded then
+            appendMessage("System", "JSON Decode Failed.")
+            return
+        end
+        
+        if decoded.error then
+            appendMessage("Moon AI", "API Error: " .. tostring(decoded.error.message))
+            return
+        end
+        
+        if decoded.candidates and decoded.candidates[1] and decoded.candidates[1].content then
+            local aiResponseText = decoded.candidates[1].content.parts[1].text
+            table.insert(ConversationHistory, {
+                role = "model",
+                parts = {{ text = aiResponseText }}
+            })
+            appendMessage("Moon AI", aiResponseText)
+        else
+            appendMessage("Moon AI", "Received empty response from model.")
+        end
+    end)
 end
-local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
-local envContext = scanGameEnvironment()
-local fullPrompt = envContext .. "\n\nUser Request: " .. userPrompt
-table.insert(ConversationHistory, {
-role = "user",
-parts = {{ text = fullPrompt }}
-})
-if #ConversationHistory > MAX_HISTORY_ENTRIES then
-table.remove(ConversationHistory, 1)
-table.remove(ConversationHistory, 1) -- Keep pairs clean
-end
-local payload = {
-system_instruction = {
-parts = {{ text = systemInstruction }}
-},
-contents = ConversationHistory
-}
-local baseUrl = (CustomBaseURL ~= "") and CustomBaseURL or "https://generativelanguage.googleapis.com/v1beta/"
-local url = baseUrl .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. apiKey
-task.spawn(function()
-local success, response = pcall(function()
-return HttpService:JSONEncode(payload)
-end)
-if not success then
-appendMessage("System", "JSON Encode Error: " .. tostring(response))
-return
-end
-local requestFunc = syn and syn.request or http_request or request or HttpPost
-if not requestFunc then
-appendMessage("System", "Error: Executor does not support HTTP requests.")
-return
-end
-local reqSuccess, reqResult = pcall(function()
-return requestFunc({
-Url = url,
-Method = "POST",
-Headers = {
-["Content-Type"] = "application/json"
-},
-Body = response
-})
-end)
-if not reqSuccess or not reqResult then
-appendMessage("System", "Network Request Failed.")
-return
-end
-local decodeSuccess, decoded = pcall(function()
-return HttpService:JSONDecode(reqResult.Body)
-end)
-if not decodeSuccess or not decoded then
-appendMessage("System", "JSON Decode Failed.")
-return
-end
-if decoded.error then
-appendMessage("Moon AI", "API Error: " .. tostring(decoded.error.message))
-return
-end
-if decoded.candidates and decoded.candidates[1] and decoded.candidates[1].content then
-local aiResponseText = decoded.candidates[1].content.parts[1].text
-table.insert(ConversationHistory, {
-role = "model",
-parts = {{ text = aiResponseText }}
-})
-appendMessage("Moon AI", aiResponseText)
-else
-appendMessage("Moon AI", "Received empty response from model.")
-end
-end)
-end
+
 -- Input Action Handlers
 SendMsgBtn.Activated:Connect(function()
-local text = ChatTextBox.Text
-if text ~= "" then
-ChatTextBox.Text = ""
-appendMessage("You", text)
-sendToGemini(text)
-end
+    local text = ChatTextBox.Text
+    if text ~= "" then
+        ChatTextBox.Text = ""
+        appendMessage("You", text)
+        sendToGemini(text)
+    end
 end)
+
 ChatTextBox.FocusLost:Connect(function(enterPressed)
-if enterPressed then
-local text = ChatTextBox.Text
-if text ~= "" then
-ChatTextBox.Text = ""
-appendMessage("You", text)
-sendToGemini(text)
-end
-end
+    if enterPressed then
+        local text = ChatTextBox.Text
+        if text ~= "" then
+            ChatTextBox.Text = ""
+            appendMessage("You", text)
+            sendToGemini(text)
+        end
+    end
 end)
+
 ConnectBtn.Activated:Connect(function()
-local key = APIInput.Text
-if key ~= "" then
-saveFile(KEY_FILE, key)
-KWStatus.TextColor3 = Color3.fromRGB(50, 200, 100)
-KWStatus.Text = "Saved! Launching..."
-task.wait(0.6)
-KeyWindow.Visible = false
-ChatWindow.Visible = true
-appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
-else
-KWStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
-KWStatus.Text = "Please enter a valid API Key."
-end
+    local key = APIInput.Text
+    if key ~= "" then
+        saveFile(KEY_FILE, key)
+        KWStatus.TextColor3 = Color3.fromRGB(50, 200, 100)
+        KWStatus.Text = "Saved! Launching..."
+        task.wait(0.6)
+        KeyWindow.Visible = false
+        ChatWindow.Visible = true
+        appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
+    else
+        KWStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+        KWStatus.Text = "Please enter a valid API Key."
+    end
 end)
+
 -- Initial Startup Check
 if savedKey and savedKey ~= "" then
-KeyWindow.Visible = false
-ChatWindow.Visible = true
-appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
+    KeyWindow.Visible = false
+    ChatWindow.Visible = true
+    appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
 else
-KeyWindow.Visible = true
+    KeyWindow.Visible = true
 end
