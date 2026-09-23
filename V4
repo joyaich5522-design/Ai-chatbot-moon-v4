@@ -1,5 +1,5 @@
 -- ====================================================================
--- MOON AI v2.0 - MINIMIZED MOBILE TOGGLE & CHATBOT
+-- MOON AI v4 - MINIMIZED MOBILE TOGGLE & CHATBOT
 -- ====================================================================
 
 getgenv().SCRIPT_KEY = "MOONONTOP"
@@ -150,7 +150,7 @@ local KWHeader = Instance.new("TextLabel", KeyWindow)
 KWHeader.Size = UDim2.new(1, -20, 0, 25)
 KWHeader.Position = UDim2.new(0, 10, 0, 8)
 KWHeader.BackgroundTransparency = 1
-KWHeader.Text = "Moon AI v2.0 - Setup"
+KWHeader.Text = "Moon AI v4 - Setup"
 KWHeader.TextColor3 = Color3.fromRGB(240, 245, 255)
 KWHeader.Font = Enum.Font.GothamBold
 KWHeader.TextSize = 12
@@ -211,7 +211,7 @@ local WindowTitle = Instance.new("TextLabel", TitleBar)
 WindowTitle.Size = UDim2.new(0, 100, 1, 0)
 WindowTitle.Position = UDim2.new(0, 8, 0, 0)
 WindowTitle.BackgroundTransparency = 1
-WindowTitle.Text = "Moon AI v2.0"
+WindowTitle.Text = "Moon AI v4"
 WindowTitle.TextColor3 = Color3.fromRGB(240, 245, 255)
 WindowTitle.Font = Enum.Font.GothamBold
 WindowTitle.TextSize = 11
@@ -358,7 +358,7 @@ local function createSettingsTab(name)
     tabButtons[name] = btn
     tabPanels[name] = panel
     
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         for tabName, p in pairs(tabPanels) do
             p.Visible = (tabName == name)
             tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(24, 28, 36)
@@ -399,7 +399,7 @@ local function createAgentModeButton(modeName)
     btn.TextSize = 9
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         AgentPermissionMode = modeName
         for _, child in ipairs(AgentRow:GetChildren()) do
             if child:IsA("TextButton") then child.BackgroundColor3 = Color3.fromRGB(30, 35, 45) end
@@ -449,7 +449,7 @@ local function createModelOption(name, path)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         SELECTED_MODEL_PATH = path
         ModelBadge.Text = "  " .. name
         for _, child in ipairs(ProviderPanel:GetChildren()) do
@@ -473,19 +473,19 @@ BackToChatBtn.Font = Enum.Font.GothamBold
 BackToChatBtn.TextSize = 9
 Instance.new("UICorner", BackToChatBtn).CornerRadius = UDim.new(0, 4)
 
-BackToChatBtn.MouseButton1Click:Connect(function()
+BackToChatBtn.Activated:Connect(function()
     SettingsContainer.Visible = false
     ChatContainer.Visible = true
 end)
 
-OpenSettingsBtn.MouseButton1Click:Connect(function()
+OpenSettingsBtn.Activated:Connect(function()
     ChatContainer.Visible = false
     SettingsContainer.Visible = true
 end)
 
 -- Minimize Logic
 local isMinimized = false
-MinimizeWindowBtn.MouseButton1Click:Connect(function()
+MinimizeWindowBtn.Activated:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
         ChatContainer.Visible = false
@@ -499,12 +499,12 @@ MinimizeWindowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-CloseWindowBtn.MouseButton1Click:Connect(function()
+CloseWindowBtn.Activated:Connect(function()
     ChatWindow.Visible = false
     ToggleBtn.Visible = true
 end)
 
-ToggleBtn.MouseButton1Click:Connect(function()
+ToggleBtn.Activated:Connect(function()
     ToggleBtn.Visible = false
     ChatWindow.Visible = true
 end)
@@ -524,9 +524,8 @@ local function appendMessage(sender, text)
     textLabel.TextSize = 10
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Text = "**" .. sender .. ":** " .. text
+    textLabel.Text = "**" .. sender .. "** " .. text
     
-    -- Auto adjust size
     task.defer(function()
         textLabel.Size = UDim2.new(1, -10, 0, textLabel.TextBounds.Y + 6)
         msgFrame.Size = UDim2.new(1, 0, 0, textLabel.TextBounds.Y + 8)
@@ -534,7 +533,6 @@ local function appendMessage(sender, text)
         ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
     end)
     
-    -- Action buttons for assistant messages containing code
     if sender == "Moon AI" then
         local cleaned = cleanCodeString(text)
         if cleaned:find("local") or cleaned:find("game") then
@@ -551,7 +549,7 @@ local function appendMessage(sender, text)
             execBtn.TextSize = 9
             Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
             
-            execBtn.MouseButton1Click:Connect(function()
+            execBtn.Activated:Connect(function()
                 local success, err = executeScript(cleaned)
                 if success then
                     execBtn.Text = "Executed!"
@@ -614,7 +612,7 @@ local function sendToGemini(userInput)
 end
 
 -- Send Message Event Handling
-SendMsgBtn.MouseButton1Click:Connect(function()
+SendMsgBtn.Activated:Connect(function()
     local text = ChatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
     if text == "" then return end
     
@@ -633,7 +631,7 @@ ChatTextBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-ConnectBtn.MouseButton1Click:Connect(function()
+ConnectBtn.Activated:Connect(function()
     local key = APIInput.Text:gsub("^%s*(.-)%s*$", "%1")
     if key == "" then
         KWStatus.Text = "Please enter a valid API key!"
@@ -651,7 +649,6 @@ ConnectBtn.MouseButton1Click:Connect(function()
     KWStatus.Text = ""
 end)
 
--- Auto-open key window if no saved key found
 if savedKey and savedKey ~= "" then
     API_KEY = savedKey
     ChatWindow.Visible = true
