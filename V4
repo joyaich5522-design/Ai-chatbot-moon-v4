@@ -457,9 +457,23 @@ local function createModelOption(name, path)
         btn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
     end)
 end
-createModelOption("Gemini 3.5 Flash Lite", "models/gemini-3.5-flash-lite")
-createModelOption("Gemini 1.5 Flash", "models/gemini-1.5-flash")
-createModelOption("Gemini 1.5 Pro", "models/gemini-1.5-pro")
+-- Expanded Model Selection Paths
+local AVAILABLE_MODELS = {
+    ["Gemini 3.8 Flash"] = "models/gemini-3.8-flash",
+    ["Gemini 3.7 Flash"] = "models/gemini-3.7-flash",
+    ["Gemini 3.6 Flash"] = "models/gemini-3.6-flash",
+    ["Gemini 3.5 Flash Lite"] = "models/gemini-3.5-flash-lite",
+    ["Gemini 3.1 Pro (Preview)"] = "models/gemini-3.1-pro-preview",
+    ["Gemini 3.1 Flash-Lite"] = "models/gemini-3.1-flash-lite",
+    ["Gemini 2.5 Pro"] = "models/gemini-2.5-pro",
+    ["Gemini 2.5 Flash"] = "models/gemini-2.5-flash",
+    ["Gemini 2.5 Flash-Lite"] = "models/gemini-2.5-flash-lite",
+    ["Transcribe / Audio (Gemini 3.8 Audio)"] = "models/gemini-3.8-audio"
+}
+-- Remove the old individual createModelOption lines and replace them with this loop:
+for name, path in pairs(AVAILABLE_MODELS) do
+    createModelOption(name, path)
+end
 
 -- Back to Chat Button
 local BackToChatBtn = Instance.new("TextButton", SettingsContainer)
