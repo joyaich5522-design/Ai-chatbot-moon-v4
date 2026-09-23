@@ -610,53 +610,111 @@ local function appendMessage(sender, text)
 end
 
 -- Core API Communication Function
-local function sendToGemini(userInput)
-    local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
-    local environmentContext = scanGameEnvironment()
+local TextService = game:GetService("TextService")
+
+local function appendMessage(sender, text)
+    local isUser = (sender == "You")
     
-    table.insert(ConversationHistory, {
-        role = "user",
-        parts = { { text = environmentContext .. "\n\nUser Request: " .. userInput } }
-    })
+    local msgFrame = Instance.new("Frame", ChatScroll)
+    msgFrame.Name = "MsgFrame"
+    msgFrame.BackgroundTransparency = 1
+    msgFrame.Size = UDim2.new(1, 0, 0, 0)
     
-    if #ConversationHistory > MAX_HISTORY_ENTRIES then
-        table.remove(ConversationHistory, 1)
+    local bubble = Instance.new("Frame", msgFrame)
+    bubble.BackgroundColor3 = isUser ? Color3.fromRGB(30, 45, 75) : Color3.fromRGB(35, 40, 55)
+    bubble.BorderSizePixel = 0
+    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
+    
+    local textLabel = Instance.new("TextLabel", bubble)
+    textLabel.Size = UDim2.new(1, -16, 1, -12)
+    textLabel.Position = UDim2.new(0, 8, 0, 6)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = isUser and Color3.fromRGB(210, 230, 255) or Color3.fromRGB(240, 245, 255)
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 10
+    textLabel.TextWrapped = true
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Top
+    
+    if isUser then
+        textLabel.Text = "👤: " .. text
+    else
+        textLabel.Text = "🌙: " .. text
     end
     
-    local payload = HttpService:JSONEncode({
-        system_instruction = {
-            parts = { { text = systemInstruction } }
-        },
-        contents = ConversationHistory
-    })
+    local cleaned = cleanCodeString(text)
+    local hasCode = (not isUser) and (cleaned:find("local") or cleaned:find("game"))
     
-    local url = "https://generativelanguage.googleapis.com/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
-    if CustomBaseURL ~= "" then
-        url = CustomBaseURL .. "/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
-    end
+    -- Calculate precise text bounds synchronously to avoid mobile layout clipping
+    local maxWidth = math.max(ChatScroll.AbsoluteSize.X - 30, 150)
+    local textBounds = TextService:GetTextSize(textLabel.Text, 10, Enum.Font.Gotham, Vector2.new(maxWidth, 10000))
     
-    local success, response = pcall(function()
-        return HttpService:RequestAsync({
-            Url = url,
-            Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = payload
-        })
-    end)
+    local finalW = math.clamp(textBounds.X + 24, 100, maxWidth)
+    local finalH = math.max(textBounds.Y + 14, 28)
     
-    if success and response.Success then
-        local data = HttpService:JSONDecode(response.Body)
-        if data.candidates and data.candidates[1] and data.candidates[1].content then
-            local reply = data.candidates[1].content.parts[1].text
-            table.insert(ConversationHistory, {
-                role = "model",
-                parts = { { text = reply } }
-            })
-            return reply
+    bubble.Size = UDim2.new(0, finalW, 0, finalH)
+    
+    if isUser then
+        bubble.Position = UDim2.new(1, -finalW - 4, 0, 2)
+        msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
+    else
+        bubble.Position = UDim2.new(0, 4, 0, 2)
+        if hasCode then
+            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 34)
+        else
+            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
         end
     end
     
-    return "Error communicating with Gemini API or invalid key."
+    ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 20)
+    ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
+    
+    if hasCode then
+        local actionRow = Instance.new("Frame", msgFrame)
+        actionRow.Size = UDim2.new(0, 130, 0, 20)
+        actionRow.Position = UDim2.new(0, 4, 0, finalH + 6)
+        actionRow.BackgroundTransparency = 1
+        
+        local execBtn = Instance.new("TextButton", actionRow)
+        execBtn.Size = UDim2.new(0, 60, 1, 0)
+        execBtn.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
+        execBtn.Text = "Execute"
+        execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        execBtn.Font = Enum.Font.GothamBold
+        execBtn.TextSize = 9
+        Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
+        
+        execBtn.Activated:Connect(function()
+            local success, err = executeScript(cleaned)
+            if success then
+                execBtn.Text = "Executed!"
+            else
+                execBtn.Text = "Error"
+            end
+        end)
+        
+        local copyBtn = Instance.new("TextButton", actionRow)
+        copyBtn.Size = UDim2.new(0, 60, 1, 0)
+        copyBtn.Position = UDim2.new(0, 64, 0, 0)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(70, 80, 105)
+        copyBtn.Text = "Copy"
+        copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        copyBtn.Font = Enum.Font.GothamBold
+        copyBtn.TextSize = 9
+        Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
+        
+        copyBtn.Activated:Connect(function()
+            if setclipboard then
+                pcall(setclipboard, cleaned)
+                copyBtn.Text = "Copied!"
+                task.delay(1.5, function()
+                    copyBtn.Text = "Copy"
+                end)
+            else
+                copyBtn.Text = "No Clip"
+            end
+        end)
+    end
 end
 
 -- Send Message Event Handling
