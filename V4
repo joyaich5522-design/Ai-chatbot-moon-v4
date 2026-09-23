@@ -114,15 +114,15 @@ ScreenGui.Name = "MoonAISystem"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Minimized Toggle Button (34x34)
+-- Minimized Toggle Button (34x34) - Fixed to NOT be draggable and properly toggle UI
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 34, 0, 34)
 ToggleBtn.Position = UDim2.new(1, -45, 0, 8)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 32, 40)
 ToggleBtn.Image = "rbxassetid://102551636383591"
-ToggleBtn.Visible = true
+ToggleBtn.Visible = false
 ToggleBtn.Active = true
-ToggleBtn.Draggable = true
+ToggleBtn.Draggable = false
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
 ToggleStroke.Color = Color3.fromRGB(60, 68, 88)
@@ -255,7 +255,7 @@ ChatScroll.BackgroundTransparency = 1
 ChatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 ChatScroll.ScrollBarThickness = 2
 local ChatLayout = Instance.new("UIListLayout", ChatScroll)
-ChatLayout.Padding = UDim.new(0, 4)
+ChatLayout.Padding = UDim.new(0, 6)
 ChatLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- Meta Bar
@@ -481,20 +481,10 @@ OpenSettingsBtn.Activated:Connect(function()
     SettingsContainer.Visible = true
 end)
 
--- Minimize Logic
-local isMinimized = false
+-- Minimize/Close & Toggle Button Event Handlers
 MinimizeWindowBtn.Activated:Connect(function()
-    isMinimized = not isMinimized
-    if isMinimized then
-        ChatContainer.Visible = false
-        SettingsContainer.Visible = false
-        ChatWindow.Size = UDim2.new(0, 420, 0, 28)
-        MinimizeWindowBtn.Text = "+"
-    else
-        ChatContainer.Visible = true
-        ChatWindow.Size = UDim2.new(0, 420, 0, 300)
-        MinimizeWindowBtn.Text = "—"
-    end
+    ChatWindow.Visible = false
+    ToggleBtn.Visible = true
 end)
 
 CloseWindowBtn.Activated:Connect(function()
@@ -507,11 +497,11 @@ ToggleBtn.Activated:Connect(function()
     ChatWindow.Visible = true
 end)
 
--- UI Messaging Helper Functions (Right-aligned User, Left-aligned AI, No Stars, Fixed Action Buttons + Copy)
+-- UI Messaging Helper Functions (Fixed Width & Sizing to prevent cut-offs)
 local function appendMessage(sender, text)
     local isUser = (sender == "You")
     
-        local msgFrame = Instance.new("Frame", ChatScroll)
+    local msgFrame = Instance.new("Frame", ChatScroll)
     msgFrame.Size = UDim2.new(1, 0, 0, 0)
     msgFrame.BackgroundTransparency = 1
     
@@ -520,8 +510,8 @@ local function appendMessage(sender, text)
     bubble.BorderSizePixel = 0
     Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 6)
     
-    local textLabel = Instance.new("TextLabel", bubble)
-    textLabel.Size = UDim2.new(1, -16, 0, 0)
+        local textLabel = Instance.new("TextLabel", bubble)
+    textLabel.Size = UDim2.new(1, -16, 1, -12)
     textLabel.Position = UDim2.new(0, 8, 0, 6)
     textLabel.BackgroundTransparency = 1
     textLabel.TextColor3 = isUser and Color3.fromRGB(210, 230, 255) or Color3.fromRGB(240, 245, 255)
@@ -529,6 +519,7 @@ local function appendMessage(sender, text)
     textLabel.TextSize = 10
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Top
     
     if isUser then
         textLabel.Text = "👤: " .. text
@@ -540,25 +531,30 @@ local function appendMessage(sender, text)
     local hasCode = (not isUser) and (cleaned:find("local") or cleaned:find("game"))
     
     task.defer(function()
-        local textBoundsY = textLabel.TextBounds.Y
-        textLabel.Size = UDim2.new(1, -16, 0, textBoundsY + 4)
+        local maxWidth = ChatScroll.AbsoluteSize.X - 30
+        local textBounds = textLabel.TextBounds
+        if textBounds.X > maxWidth then
+            textBounds = game:GetService("TextService"):GetTextSize(textLabel.Text, 10, Enum.Font.Gotham, Vector2.new(maxWidth, 10000))
+        end
         
-        local estimatedWidth = math.min(textLabel.TextBounds.X + 24, ChatScroll.AbsoluteWindowSize.X * 0.85)
-        bubble.Size = UDim2.new(0, math.max(estimatedWidth, 100), 0, textBoundsY + 14)
+        local finalW = math.clamp(textBounds.X + 24, 100, maxWidth)
+        local finalH = math.max(textBounds.Y + 14, 24)
+        
+        bubble.Size = UDim2.new(0, finalW, 0, finalH)
         
         if isUser then
-            bubble.Position = UDim2.new(1, -bubble.Size.X.Offset - 4, 0, 2)
-            msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 6)
+            bubble.Position = UDim2.new(1, -finalW - 4, 0, 2)
+            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
         else
             bubble.Position = UDim2.new(0, 4, 0, 2)
             if hasCode then
-                msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 30)
+                msgFrame.Size = UDim2.new(1, 0, 0, finalH + 30)
             else
-                msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 6)
+                msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
             end
         end
         
-        ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 10)
+        ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 15)
         ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
     end)
     
