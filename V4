@@ -4,13 +4,12 @@
 -- Created by Roy Aich
 -- Credits Moon ai
 
-getgenv().SCRIPT_KEY = "MOONONTOP"
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 local Workspace = game:GetService("Workspace")
+local TextService = game:GetService("TextService")
 
 if PlayerGui:FindFirstChild("MoonAISystem") then
     PlayerGui.MoonAISystem:Destroy()
@@ -114,7 +113,7 @@ ScreenGui.Name = "MoonAISystem"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Minimized Toggle Button (34x34) - Fixed to NOT be draggable and properly toggle UI
+-- Minimized Toggle Button (34x34)
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 34, 0, 34)
 ToggleBtn.Position = UDim2.new(1, -45, 0, 8)
@@ -184,7 +183,7 @@ KWStatus.Font = Enum.Font.Gotham
 KWStatus.TextSize = 10
 KWStatus.TextXAlignment = Enum.TextXAlignment.Left
 
--- Main Chat Window (Wider/Fatter: 420x300)
+-- Main Chat Window (420x300)
 local ChatWindow = Instance.new("Frame", ScreenGui)
 ChatWindow.Size = UDim2.new(0, 420, 0, 300)
 ChatWindow.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -497,121 +496,7 @@ ToggleBtn.Activated:Connect(function()
     ChatWindow.Visible = true
 end)
 
--- UI Messaging Helper Functions (Fixed Width & Sizing to prevent cut-offs)
-local function appendMessage(sender, text)
-    local isUser = (sender == "You")
-    
-    local msgFrame = Instance.new("Frame", ChatScroll)
-    msgFrame.Size = UDim2.new(1, 0, 0, 0)
-    msgFrame.BackgroundTransparency = 1
-    
-    local bubble = Instance.new("Frame", msgFrame)
-    bubble.BackgroundColor3 = isUser and Color3.fromRGB(35, 42, 60) or Color3.fromRGB(26, 30, 40)
-    bubble.BorderSizePixel = 0
-    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 6)
-    
-        local textLabel = Instance.new("TextLabel", bubble)
-    textLabel.Size = UDim2.new(1, -16, 1, -12)
-    textLabel.Position = UDim2.new(0, 8, 0, 6)
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = isUser and Color3.fromRGB(210, 230, 255) or Color3.fromRGB(240, 245, 255)
-    textLabel.Font = Enum.Font.Gotham
-    textLabel.TextSize = 10
-    textLabel.TextWrapped = true
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.TextYAlignment = Enum.TextYAlignment.Top
-    
-    if isUser then
-        textLabel.Text = "👤: " .. text
-    else
-        textLabel.Text = "🌙: " .. text
-    end
-    
-    local cleaned = cleanCodeString(text)
-    local hasCode = (not isUser) and (cleaned:find("local") or cleaned:find("game"))
-    
-    task.defer(function()
-        local maxWidth = ChatScroll.AbsoluteSize.X - 30
-        local textBounds = textLabel.TextBounds
-        if textBounds.X > maxWidth then
-            textBounds = game:GetService("TextService"):GetTextSize(textLabel.Text, 10, Enum.Font.Gotham, Vector2.new(maxWidth, 10000))
-        end
-        
-        local finalW = math.clamp(textBounds.X + 24, 100, maxWidth)
-        local finalH = math.max(textBounds.Y + 14, 24)
-        
-        bubble.Size = UDim2.new(0, finalW, 0, finalH)
-        
-        if isUser then
-            bubble.Position = UDim2.new(1, -finalW - 4, 0, 2)
-            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
-        else
-            bubble.Position = UDim2.new(0, 4, 0, 2)
-            if hasCode then
-                msgFrame.Size = UDim2.new(1, 0, 0, finalH + 30)
-            else
-                msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
-            end
-        end
-        
-        ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 15)
-        ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
-    end)
-    
-    if hasCode then
-        local actionRow = Instance.new("Frame", msgFrame)
-        actionRow.Size = UDim2.new(0, 130, 0, 20)
-        actionRow.BackgroundTransparency = 1
-        
-        task.defer(function()
-            actionRow.Position = UDim2.new(0, 4, 0, bubble.Size.Y.Offset + 4)
-        end)
-        
-        local execBtn = Instance.new("TextButton", actionRow)
-        execBtn.Size = UDim2.new(0, 60, 1, 0)
-        execBtn.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
-        execBtn.Text = "Execute"
-        execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        execBtn.Font = Enum.Font.GothamBold
-        execBtn.TextSize = 9
-        Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
-        
-        execBtn.Activated:Connect(function()
-            local success, err = executeScript(cleaned)
-            if success then
-                execBtn.Text = "Executed!"
-            else
-                execBtn.Text = "Error"
-            end
-        end)
-        
-        local copyBtn = Instance.new("TextButton", actionRow)
-        copyBtn.Size = UDim2.new(0, 60, 1, 0)
-        copyBtn.Position = UDim2.new(0, 64, 0, 0)
-        copyBtn.BackgroundColor3 = Color3.fromRGB(70, 80, 105)
-        copyBtn.Text = "Copy"
-        copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        copyBtn.Font = Enum.Font.GothamBold
-        copyBtn.TextSize = 9
-        Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
-        
-        copyBtn.Activated:Connect(function()
-            if setclipboard then
-                pcall(setclipboard, cleaned)
-                copyBtn.Text = "Copied!"
-                task.delay(1.5, function()
-                    copyBtn.Text = "Copy"
-                end)
-            else
-                copyBtn.Text = "No Clip"
-            end
-        end)
-    end
-end
-
--- Core API Communication Function
-local TextService = game:GetService("TextService")
-
+-- UI Messaging Helper Functions (With Error Printing for Execution)
 local function appendMessage(sender, text)
     local isUser = (sender == "You")
     
@@ -621,143 +506,183 @@ local function appendMessage(sender, text)
     msgFrame.Size = UDim2.new(1, 0, 0, 0)
     
     local bubble = Instance.new("Frame", msgFrame)
-    bubble.BackgroundColor3 = isUser ? Color3.fromRGB(30, 45, 75) : Color3.fromRGB(35, 40, 55)
+    bubble.BackgroundColor3 = isUser and Color3.fromRGB(30, 45, 75) or Color3.fromRGB(35, 40, 55)
     bubble.BorderSizePixel = 0
     Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
     
-    local textLabel = Instance.new("TextLabel", bubble)
-    textLabel.Size = UDim2.new(1, -16, 1, -12)
-    textLabel.Position = UDim2.new(0, 8, 0, 6)
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = isUser and Color3.fromRGB(210, 230, 255) or Color3.fromRGB(240, 245, 255)
-    textLabel.Font = Enum.Font.Gotham
-    textLabel.TextSize = 10
-    textLabel.TextWrapped = true
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.TextYAlignment = Enum.TextYAlignment.Top
-    
-    if isUser then
-        textLabel.Text = "👤: " .. text
-    else
-        textLabel.Text = "🌙: " .. text
-    end
-    
-    local cleaned = cleanCodeString(text)
-    local hasCode = (not isUser) and (cleaned:find("local") or cleaned:find("game"))
-    
-    -- Calculate precise text bounds synchronously to avoid mobile layout clipping
-    local maxWidth = math.max(ChatScroll.AbsoluteSize.X - 30, 150)
-    local textBounds = TextService:GetTextSize(textLabel.Text, 10, Enum.Font.Gotham, Vector2.new(maxWidth, 10000))
-    
-    local finalW = math.clamp(textBounds.X + 24, 100, maxWidth)
-    local finalH = math.max(textBounds.Y + 14, 28)
-    
-    bubble.Size = UDim2.new(0, finalW, 0, finalH)
-    
-    if isUser then
-        bubble.Position = UDim2.new(1, -finalW - 4, 0, 2)
-        msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
-    else
-        bubble.Position = UDim2.new(0, 4, 0, 2)
-        if hasCode then
-            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 34)
-        else
-            msgFrame.Size = UDim2.new(1, 0, 0, finalH + 6)
-        end
-    end
-    
-    ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 20)
-    ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
-    
-    if hasCode then
-        local actionRow = Instance.new("Frame", msgFrame)
-        actionRow.Size = UDim2.new(0, 130, 0, 20)
-        actionRow.Position = UDim2.new(0, 4, 0, finalH + 6)
-        actionRow.BackgroundTransparency = 1
-        
-        local execBtn = Instance.new("TextButton", actionRow)
-        execBtn.Size = UDim2.new(0, 60, 1, 0)
-        execBtn.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
-        execBtn.Text = "Execute"
-        execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        execBtn.Font = Enum.Font.GothamBold
-        execBtn.TextSize = 9
-        Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
-        
-        execBtn.Activated:Connect(function()
-            local success, err = executeScript(cleaned)
-            if success then
-                execBtn.Text = "Executed!"
-            else
-                execBtn.Text = "Error"
-            end
-        end)
-        
-        local copyBtn = Instance.new("TextButton", actionRow)
-        copyBtn.Size = UDim2.new(0, 60, 1, 0)
-        copyBtn.Position = UDim2.new(0, 64, 0, 0)
-        copyBtn.BackgroundColor3 = Color3.fromRGB(70, 80, 105)
-        copyBtn.Text = "Copy"
-        copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        copyBtn.Font = Enum.Font.GothamBold
-        copyBtn.TextSize = 9
-        Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
-        
-        copyBtn.Activated:Connect(function()
-            if setclipboard then
-                pcall(setclipboard, cleaned)
-                copyBtn.Text = "Copied!"
-                task.delay(1.5, function()
-                    copyBtn.Text = "Copy"
-                end)
-            else
-                copyBtn.Text = "No Clip"
-            end
-        end)
-    end
+    local textLabel = Instance.new("TextLabel", buble)
+textLabel.Size = UDim2.new(1, -16, 1, -12)
+textLabel.Position = UDim2.new(0, 8, 0, 6)
+textLabel.BackgroundTransparency = 1
+textLabel.Text = text
+textLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
+textLabel.Font = Enum.Font.Gotham
+textLabel.TextSize = 10
+textLabel.TextWrapped = true
+textLabel.TextXAlignment = Enum.TextXAlignment.Left
+textLabel.TextYAlignment = Enum.TextYAlignment.Top
+local padding = 16
+local textSize = TextService:GetTextSize(text, 10, Enum.Font.Gotham, Vector2.new(ChatScroll.AbsoluteSize.X - 24, math.huge))
+local totalHeight = math.max(26, textSize.Y + padding)
+bubble.Size = UDim2.new(0, ChatScroll.AbsoluteSize.X - 12, 0, totalHeight)
+bubble.Position = isUser and UDim2.new(1, -bubble.AbsoluteSize.X - 4, 0, 0) or UDim2.new(0, 4, 0, 0)
+msgFrame.Size = UDim2.new(1, 0, 0, totalHeight + 6)
+ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 10)
+ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Scale * ChatScroll.AbsoluteSize.Y + ChatScroll.CanvasSize.Y.Offset)
+-- If it's a response from Moon AI containing code, add an Execution Button
+if sender == "Moon AI" then
+local cleaned = cleanCodeString(text)
+if cleaned:match("game:") or cleaned:match("local%s+") or cleaned:match("function") then
+local execBtn = Instance.new("TextButton", bubble)
+execBtn.Size = UDim2.new(0, 80, 0, 20)
+execBtn.Position = UDim2.new(1, -85, 1, -22)
+execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+execBtn.Text = "▶ Execute"
+execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+execBtn.Font = Enum.Font.GothamBold
+execBtn.TextSize = 9
+Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
+execBtn.Activated:Connect(function()
+local success, err = executeScript(text)
+if success then
+execBtn.Text = "✔ Executed"
+execBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 90)
+task.delay(1.5, function()
+if execBtn.Parent then
+execBtn.Text = "▶ Execute"
+execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
 end
-
--- Send Message Event Handling
-SendMsgBtn.Activated:Connect(function()
-    local text = ChatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
-    if text == "" then return end
-    
-    ChatTextBox.Text = ""
-    appendMessage("You", text)
-    
-    task.spawn(function()
-        local reply = sendToGemini(text)
-        appendMessage("Moon AI", reply)
-    end)
 end)
-
-ChatTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        SendMsgBtn:Activate()
-    end
-end)
-
-ConnectBtn.Activated:Connect(function()
-    local key = APIInput.Text:gsub("^%s*(.-)%s*$", "%1")
-    if key == "" then
-        KWStatus.Text = "Please enter a valid API key!"
-        return
-    end
-    
-    API_KEY = key
-    saveFile(KEY_FILE, key)
-    
-    KWStatus.Text = "Connecting..."
-    task.wait(0.3)
-    
-    KeyWindow.Visible = false
-    ChatWindow.Visible = true
-    KWStatus.Text = ""
-end)
-
-if savedKey and savedKey ~= "" then
-    API_KEY = savedKey
-    ChatWindow.Visible = true
 else
-    KeyWindow.Visible = true
+execBtn.Text = "✖ Error"
+execBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+warn("[Moon AI Error]: " + tostring(err))
+task.delay(2, function()
+if execBtn.Parent then
+execBtn.Text = "▶ Execute"
+execBtn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
+end
+end)
+end
+end)
+end
+end
+end
+-- Network Request Function to Gemini API
+local function sendToGemini(userPrompt)
+local apiKey = APIInput.Text
+if apiKey == "" then
+appendMessage("System", "Error: API Key is missing. Please enter it in the setup window.")
+return
+end
+local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
+local envContext = scanGameEnvironment()
+local fullPrompt = envContext .. "\n\nUser Request: " .. userPrompt
+table.insert(ConversationHistory, {
+role = "user",
+parts = {{ text = fullPrompt }}
+})
+if #ConversationHistory > MAX_HISTORY_ENTRIES then
+table.remove(ConversationHistory, 1)
+table.remove(ConversationHistory, 1) -- Keep pairs clean
+end
+local payload = {
+system_instruction = {
+parts = {{ text = systemInstruction }}
+},
+contents = ConversationHistory
+}
+local baseUrl = (CustomBaseURL ~= "") and CustomBaseURL or "https://generativelanguage.googleapis.com/v1beta/"
+local url = baseUrl .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. apiKey
+task.spawn(function()
+local success, response = pcall(function()
+return HttpService:JSONEncode(payload)
+end)
+if not success then
+appendMessage("System", "JSON Encode Error: " .. tostring(response))
+return
+end
+local requestFunc = syn and syn.request or http_request or request or HttpPost
+if not requestFunc then
+appendMessage("System", "Error: Executor does not support HTTP requests.")
+return
+end
+local reqSuccess, reqResult = pcall(function()
+return requestFunc({
+Url = url,
+Method = "POST",
+Headers = {
+["Content-Type"] = "application/json"
+},
+Body = response
+})
+end)
+if not reqSuccess or not reqResult then
+appendMessage("System", "Network Request Failed.")
+return
+end
+local decodeSuccess, decoded = pcall(function()
+return HttpService:JSONDecode(reqResult.Body)
+end)
+if not decodeSuccess or not decoded then
+appendMessage("System", "JSON Decode Failed.")
+return
+end
+if decoded.error then
+appendMessage("Moon AI", "API Error: " .. tostring(decoded.error.message))
+return
+end
+if decoded.candidates and decoded.candidates[1] and decoded.candidates[1].content then
+local aiResponseText = decoded.candidates[1].content.parts[1].text
+table.insert(ConversationHistory, {
+role = "model",
+parts = {{ text = aiResponseText }}
+})
+appendMessage("Moon AI", aiResponseText)
+else
+appendMessage("Moon AI", "Received empty response from model.")
+end
+end)
+end
+-- Input Action Handlers
+SendMsgBtn.Activated:Connect(function()
+local text = ChatTextBox.Text
+if text ~= "" then
+ChatTextBox.Text = ""
+appendMessage("You", text)
+sendToGemini(text)
+end
+end)
+ChatTextBox.FocusLost:Connect(function(enterPressed)
+if enterPressed then
+local text = ChatTextBox.Text
+if text ~= "" then
+ChatTextBox.Text = ""
+appendMessage("You", text)
+sendToGemini(text)
+end
+end
+end)
+ConnectBtn.Activated:Connect(function()
+local key = APIInput.Text
+if key ~= "" then
+saveFile(KEY_FILE, key)
+KWStatus.TextColor3 = Color3.fromRGB(50, 200, 100)
+KWStatus.Text = "Saved! Launching..."
+task.wait(0.6)
+KeyWindow.Visible = false
+ChatWindow.Visible = true
+appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
+else
+KWStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+KWStatus.Text = "Please enter a valid API Key."
+end
+end)
+-- Initial Startup Check
+if savedKey and savedKey ~= "" then
+KeyWindow.Visible = false
+ChatWindow.Visible = true
+appendMessage("Moon AI", "Hello Roy Aich! Moon AI v4 is online and ready. Type your prompt or exploit request below.")
+else
+KeyWindow.Visible = true
 end
