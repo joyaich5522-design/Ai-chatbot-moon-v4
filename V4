@@ -40,19 +40,20 @@ local AVAILABLE_MODELS = {
     ["Transcribe / Audio (Gemini 3.8 Audio)"] = "models/gemini-3.8-audio"
 }
 
-local SELECTED_MODEL_PATH = "models/gemini-3.5-flash-lite"
+local SELECTED_MODEL_PATH = "models/gemini-3.6-flash"
 
 -- Sound Effect Helper Function
 local function playSound(soundId)
     pcall(function()
         local sound = Instance.new("Sound")
-        sound.SoundId = "rbxassetid://" .. tostring(soundId)
-        sound.Volume = 0.5
+        sound.SoundId = "rbxassetid://6895073853" -- Built-in Roblox UI click sound
+        sound.Volume = 1
         sound.Parent = SoundService
         sound:Play()
         game:GetService("Debris"):AddItem(sound, 2)
     end)
 end
+
 
 local DefaultSystemInstruction = [[
 You are Moon AI, an elite and specialized Roblox exploit scripter and execution assistant designed exclusively to write exploits, cheats, bypasses, hacks, and automation scripts for executors.
