@@ -1,6 +1,8 @@
--- ====================================================================
--- MOON AI v2.0 - MINIMIZED MOBILE TOGGLE & CHATBOT
--- ====================================================================
+-- ====================================================
+--              MOON AI v4 EXPLOIT GUI
+-- ====================================================
+-- Created by Roy Aich
+-- Credits Moon ai
 
 getgenv().SCRIPT_KEY = "MOONONTOP"
 
@@ -85,13 +87,6 @@ local function loadFile(path)
     return nil
 end
 
-local function copyToClipboard(str)
-    if setclipboard then pcall(setclipboard, str) return true end
-    if toclipboard then pcall(toclipboard, str) return true end
-    if set_clipboard then pcall(set_clipboard, str) return true end
-    return false
-end
-
 local function cleanCodeString(code)
     code = code:gsub("^%s*```lua%s*", "")
     code = code:gsub("^%s*```%s*", "")
@@ -136,7 +131,8 @@ ToggleStroke.Thickness = 1.2
 -- Compact API Key Setup Window (300x170)
 local KeyWindow = Instance.new("Frame", ScreenGui)
 KeyWindow.Size = UDim2.new(0, 300, 0, 170)
-KeyWindow.Position = UDim2.new(0.5, -150, 0.5, -85)
+KeyWindow.AnchorPoint = Vector2.new(0.5, 0.5)
+KeyWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
 KeyWindow.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
 KeyWindow.Active = true
 KeyWindow.Draggable = true
@@ -150,7 +146,7 @@ local KWHeader = Instance.new("TextLabel", KeyWindow)
 KWHeader.Size = UDim2.new(1, -20, 0, 25)
 KWHeader.Position = UDim2.new(0, 10, 0, 8)
 KWHeader.BackgroundTransparency = 1
-KWHeader.Text = "Moon AI v2.0 - Setup"
+KWHeader.Text = "Moon AI v4 - Setup"
 KWHeader.TextColor3 = Color3.fromRGB(240, 245, 255)
 KWHeader.Font = Enum.Font.GothamBold
 KWHeader.TextSize = 12
@@ -188,10 +184,11 @@ KWStatus.Font = Enum.Font.Gotham
 KWStatus.TextSize = 10
 KWStatus.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimized Main Chat Window (310x320)
+-- Main Chat Window (Wider/Fatter: 420x300)
 local ChatWindow = Instance.new("Frame", ScreenGui)
-ChatWindow.Size = UDim2.new(0, 310, 0, 320)
-ChatWindow.Position = UDim2.new(0.5, -155, 0.5, -160)
+ChatWindow.Size = UDim2.new(0, 420, 0, 300)
+ChatWindow.AnchorPoint = Vector2.new(0.5, 0.5)
+ChatWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
 ChatWindow.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
 ChatWindow.Visible = false 
 ChatWindow.Active = true
@@ -204,6 +201,7 @@ CWStroke.Thickness = 1.2
 -- Slim Title Bar (28px)
 local TitleBar = Instance.new("Frame", ChatWindow)
 TitleBar.Size = UDim2.new(1, 0, 0, 28)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
 TitleBar.BackgroundColor3 = Color3.fromRGB(24, 27, 36)
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
 
@@ -211,7 +209,7 @@ local WindowTitle = Instance.new("TextLabel", TitleBar)
 WindowTitle.Size = UDim2.new(0, 100, 1, 0)
 WindowTitle.Position = UDim2.new(0, 8, 0, 0)
 WindowTitle.BackgroundTransparency = 1
-WindowTitle.Text = "Moon AI v2.0"
+WindowTitle.Text = "Moon AI v4"
 WindowTitle.TextColor3 = Color3.fromRGB(240, 245, 255)
 WindowTitle.Font = Enum.Font.GothamBold
 WindowTitle.TextSize = 11
@@ -239,7 +237,7 @@ local CloseWindowBtn = Instance.new("TextButton", TitleBar)
 CloseWindowBtn.Size = UDim2.new(0, 20, 0, 20)
 CloseWindowBtn.Position = UDim2.new(1, -22, 0, 4)
 CloseWindowBtn.BackgroundTransparency = 1
-CloseWindowBtn.Text = "X"
+CloseWindowBtn.Text = "✕"
 CloseWindowBtn.TextColor3 = Color3.fromRGB(160, 170, 190)
 CloseWindowBtn.Font = Enum.Font.GothamBold
 CloseWindowBtn.TextSize = 11
@@ -267,9 +265,9 @@ MetaBar.Position = UDim2.new(0, 4, 1, -50)
 MetaBar.BackgroundTransparency = 1
 
 local ModelBadge = Instance.new("TextLabel", MetaBar)
-ModelBadge.Size = UDim2.new(0, 130, 1, 0)
+ModelBadge.Size = UDim2.new(0, 145, 1, 0)
 ModelBadge.BackgroundColor3 = Color3.fromRGB(28, 32, 42)
-ModelBadge.Text = "  Gemini 1.5 Flash"
+ModelBadge.Text = "  Gemini 3.5 Flash Lite"
 ModelBadge.TextColor3 = Color3.fromRGB(220, 230, 255)
 ModelBadge.Font = Enum.Font.GothamBold
 ModelBadge.TextSize = 9
@@ -339,7 +337,7 @@ local tabPanels = {}
 
 local function createSettingsTab(name)
     local btn = Instance.new("TextButton", TabBarFrame)
-    btn.Size = UDim2.new(0, 46, 0, 22)
+    btn.Size = UDim2.new(0, 65, 0, 22)
     btn.BackgroundColor3 = Color3.fromRGB(24, 28, 36)
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(160, 170, 195)
@@ -358,7 +356,7 @@ local function createSettingsTab(name)
     tabButtons[name] = btn
     tabPanels[name] = panel
     
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         for tabName, p in pairs(tabPanels) do
             p.Visible = (tabName == name)
             tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(24, 28, 36)
@@ -399,7 +397,7 @@ local function createAgentModeButton(modeName)
     btn.TextSize = 9
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         AgentPermissionMode = modeName
         for _, child in ipairs(AgentRow:GetChildren()) do
             if child:IsA("TextButton") then child.BackgroundColor3 = Color3.fromRGB(30, 35, 45) end
@@ -449,7 +447,7 @@ local function createModelOption(name, path)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         SELECTED_MODEL_PATH = path
         ModelBadge.Text = "  " .. name
         for _, child in ipairs(ProviderPanel:GetChildren()) do
@@ -459,8 +457,8 @@ local function createModelOption(name, path)
     end)
 end
 createModelOption("Gemini 3.5 Flash Lite", "models/gemini-3.5-flash-lite")
-createModelOption("Gemini 3.6 Flash", "models/gemini-3.6-flash")
-createModelOption("Gemini 3.7 Flash", "models/gemini-3.7-flash")
+createModelOption("Gemini 1.5 Flash", "models/gemini-1.5-flash")
+createModelOption("Gemini 1.5 Pro", "models/gemini-1.5-pro")
 
 -- Back to Chat Button
 local BackToChatBtn = Instance.new("TextButton", SettingsContainer)
@@ -473,97 +471,145 @@ BackToChatBtn.Font = Enum.Font.GothamBold
 BackToChatBtn.TextSize = 9
 Instance.new("UICorner", BackToChatBtn).CornerRadius = UDim.new(0, 4)
 
-BackToChatBtn.MouseButton1Click:Connect(function()
+BackToChatBtn.Activated:Connect(function()
     SettingsContainer.Visible = false
     ChatContainer.Visible = true
 end)
 
-OpenSettingsBtn.MouseButton1Click:Connect(function()
+OpenSettingsBtn.Activated:Connect(function()
     ChatContainer.Visible = false
     SettingsContainer.Visible = true
 end)
 
 -- Minimize Logic
 local isMinimized = false
-MinimizeWindowBtn.MouseButton1Click:Connect(function()
+MinimizeWindowBtn.Activated:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
         ChatContainer.Visible = false
         SettingsContainer.Visible = false
-        ChatWindow.Size = UDim2.new(0, 310, 0, 28)
+        ChatWindow.Size = UDim2.new(0, 420, 0, 28)
         MinimizeWindowBtn.Text = "+"
     else
         ChatContainer.Visible = true
-        ChatWindow.Size = UDim2.new(0, 310, 0, 320)
+        ChatWindow.Size = UDim2.new(0, 420, 0, 300)
         MinimizeWindowBtn.Text = "—"
     end
 end)
 
-CloseWindowBtn.MouseButton1Click:Connect(function()
+CloseWindowBtn.Activated:Connect(function()
     ChatWindow.Visible = false
     ToggleBtn.Visible = true
 end)
 
-ToggleBtn.MouseButton1Click:Connect(function()
+ToggleBtn.Activated:Connect(function()
     ToggleBtn.Visible = false
     ChatWindow.Visible = true
 end)
 
-    -- UI Messaging Helper Functions
+-- UI Messaging Helper Functions (Right-aligned User, Left-aligned AI, No Stars, Fixed Action Buttons + Copy)
 local function appendMessage(sender, text)
-    local msgFrame = Instance.new("Frame", ChatScroll)
+    local isUser = (sender == "You")
+    
+        local msgFrame = Instance.new("Frame", ChatScroll)
     msgFrame.Size = UDim2.new(1, 0, 0, 0)
     msgFrame.BackgroundTransparency = 1
     
-    local textLabel = Instance.new("TextLabel", msgFrame)
-    textLabel.Size = UDim2.new(1, -10, 0, 0)
-    textLabel.Position = UDim2.new(0, 5, 0, 2)
+    local bubble = Instance.new("Frame", msgFrame)
+    bubble.BackgroundColor3 = isUser and Color3.fromRGB(35, 42, 60) or Color3.fromRGB(26, 30, 40)
+    bubble.BorderSizePixel = 0
+    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 6)
+    
+    local textLabel = Instance.new("TextLabel", bubble)
+    textLabel.Size = UDim2.new(1, -16, 0, 0)
+    textLabel.Position = UDim2.new(0, 8, 0, 6)
     textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = sender == "You" and Color3.fromRGB(200, 220, 255) or Color3.fromRGB(240, 245, 255)
+    textLabel.TextColor3 = isUser and Color3.fromRGB(210, 230, 255) or Color3.fromRGB(240, 245, 255)
     textLabel.Font = Enum.Font.Gotham
     textLabel.TextSize = 10
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Format without stars
-    if sender == "You" then
+    if isUser then
         textLabel.Text = "👤: " .. text
     else
         textLabel.Text = "🌙: " .. text
     end
     
+    local cleaned = cleanCodeString(text)
+    local hasCode = (not isUser) and (cleaned:find("local") or cleaned:find("game"))
+    
     task.defer(function()
-        textLabel.Size = UDim2.new(1, -10, 0, textLabel.TextBounds.Y + 6)
-        msgFrame.Size = UDim2.new(1, 0, 0, textLabel.TextBounds.Y + 8)
+        local textBoundsY = textLabel.TextBounds.Y
+        textLabel.Size = UDim2.new(1, -16, 0, textBoundsY + 4)
+        
+        local estimatedWidth = math.min(textLabel.TextBounds.X + 24, ChatScroll.AbsoluteWindowSize.X * 0.85)
+        bubble.Size = UDim2.new(0, math.max(estimatedWidth, 100), 0, textBoundsY + 14)
+        
+        if isUser then
+            bubble.Position = UDim2.new(1, -bubble.Size.X.Offset - 4, 0, 2)
+            msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 6)
+        else
+            bubble.Position = UDim2.new(0, 4, 0, 2)
+            if hasCode then
+                msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 30)
+            else
+                msgFrame.Size = UDim2.new(1, 0, 0, bubble.Size.Y.Offset + 6)
+            end
+        end
+        
         ChatScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLayout.AbsoluteContentSize.Y + 10)
         ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
     end)
     
-    if sender == "Moon AI" then
-        local cleaned = cleanCodeString(text)
-        if cleaned:find("local") or cleaned:find("game") then
-            local actionRow = Instance.new("Frame", msgFrame)
-            actionRow.Size = UDim2.new(1, -10, 0, 20)
-            actionRow.BackgroundTransparency = 1
-            
-            local execBtn = Instance.new("TextButton", actionRow)
-            execBtn.Size = UDim2.new(0, 60, 1, 0)
-            execBtn.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
-            execBtn.Text = "Execute"
-            execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            execBtn.Font = Enum.Font.GothamBold
-            execBtn.TextSize = 9
-            Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
-            
-            execBtn.Activated:Connect(function()
-                local success, err = executeScript(cleaned)
-                if success then
-                    execBtn.Text = "Executed!"
-                else
-                    execBtn.Text = "Error"
-                end
-            end)
-        end
+    if hasCode then
+        local actionRow = Instance.new("Frame", msgFrame)
+        actionRow.Size = UDim2.new(0, 130, 0, 20)
+        actionRow.BackgroundTransparency = 1
+        
+        task.defer(function()
+            actionRow.Position = UDim2.new(0, 4, 0, bubble.Size.Y.Offset + 4)
+        end)
+        
+        local execBtn = Instance.new("TextButton", actionRow)
+        execBtn.Size = UDim2.new(0, 60, 1, 0)
+        execBtn.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
+        execBtn.Text = "Execute"
+        execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        execBtn.Font = Enum.Font.GothamBold
+        execBtn.TextSize = 9
+        Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
+        
+        execBtn.Activated:Connect(function()
+            local success, err = executeScript(cleaned)
+            if success then
+                execBtn.Text = "Executed!"
+            else
+                execBtn.Text = "Error"
+            end
+        end)
+        
+        local copyBtn = Instance.new("TextButton", actionRow)
+        copyBtn.Size = UDim2.new(0, 60, 1, 0)
+        copyBtn.Position = UDim2.new(0, 64, 0, 0)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(70, 80, 105)
+        copyBtn.Text = "Copy"
+        copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        copyBtn.Font = Enum.Font.GothamBold
+        copyBtn.TextSize = 9
+        Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
+        
+        copyBtn.Activated:Connect(function()
+            if setclipboard then
+                pcall(setclipboard, cleaned)
+                copyBtn.Text = "Copied!"
+                task.delay(1.5, function()
+                    copyBtn.Text = "Copy"
+                end)
+            else
+                copyBtn.Text = "No Clip"
+            end
+        end)
     end
 end
 
