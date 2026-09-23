@@ -10,21 +10,49 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 local Workspace = game:GetService("Workspace")
 local TextService = game:GetService("TextService")
+local SoundService = game:GetService("SoundService")
 
 if PlayerGui:FindFirstChild("MoonAISystem") then
     PlayerGui.MoonAISystem:Destroy()
 end
 
 local API_KEY = ""
-local SELECTED_MODEL_PATH = "models/gemini-3.5-flash-lite"
-local ConversationHistory = {}
 local KEY_FILE = "MoonAI_Key.json"
+local ConversationHistory = {}
 local MAX_HISTORY_ENTRIES = 16
 
 local AgentPermissionMode = "Ask"
 local CustomBaseURL = ""
 local CustomModelID = ""
 local CustomSystemPromptOverride = ""
+
+-- Expanded Model Selection Paths (Unmoved and Preserved)
+local AVAILABLE_MODELS = {
+    ["Gemini 3.8 Flash"] = "models/gemini-3.8-flash",
+    ["Gemini 3.7 Flash"] = "models/gemini-3.7-flash",
+    ["Gemini 3.6 Flash"] = "models/gemini-3.6-flash",
+    ["Gemini 3.5 Flash Lite"] = "models/gemini-3.5-flash-lite",
+    ["Gemini 3.1 Pro (Preview)"] = "models/gemini-3.1-pro-preview",
+    ["Gemini 3.1 Flash-Lite"] = "models/gemini-3.1-flash-lite",
+    ["Gemini 2.5 Pro"] = "models/gemini-2.5-pro",
+    ["Gemini 2.5 Flash"] = "models/gemini-2.5-flash",
+    ["Gemini 2.5 Flash-Lite"] = "models/gemini-2.5-flash-lite",
+    ["Transcribe / Audio (Gemini 3.8 Audio)"] = "models/gemini-3.8-audio"
+}
+
+local SELECTED_MODEL_PATH = "models/gemini-3.5-flash-lite"
+
+-- Sound Effect Helper Function
+local function playSound(soundId)
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://" .. tostring(soundId)
+        sound.Volume = 0.5
+        sound.Parent = SoundService
+        sound:Play()
+        game:GetService("Debris"):AddItem(sound, 2)
+    end)
+end
 
 local DefaultSystemInstruction = [[
 You are Moon AI, an elite and specialized Roblox exploit scripter and execution assistant designed exclusively to write exploits, cheats, bypasses, hacks, and automation scripts for executors.
@@ -264,7 +292,7 @@ MetaBar.Position = UDim2.new(0, 4, 1, -50)
 MetaBar.BackgroundTransparency = 1
 
 local ModelBadge = Instance.new("TextLabel", MetaBar)
-ModelBadge.Size = UDim2.new(0, 145, 1, 0)
+ModelBadge.Size = UDim2.new(0, 185, 1, 0)
 ModelBadge.BackgroundColor3 = Color3.fromRGB(28, 32, 42)
 ModelBadge.Text = "  Gemini 3.5 Flash Lite"
 ModelBadge.TextColor3 = Color3.fromRGB(220, 230, 255)
@@ -361,6 +389,7 @@ local function createSettingsTab(name)
     tabPanels[name] = panel
     
     btn.Activated:Connect(function()
+        playSound(9060472719)
         for tabName, p in pairs(tabPanels) do
             p.Visible = (tabName == name)
             tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(24, 28, 36)
@@ -402,6 +431,7 @@ local function createAgentModeButton(modeName)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
     btn.Activated:Connect(function()
+        playSound(9060472719)
         AgentPermissionMode = modeName
         for _, child in ipairs(AgentRow:GetChildren()) do
             if child:IsA("TextButton") then child.BackgroundColor3 = Color3.fromRGB(30, 35, 45) end
@@ -438,7 +468,7 @@ PromptInputBox.TextYAlignment = Enum.TextYAlignment.Top
 Instance.new("UICorner", PromptInputBox).CornerRadius = UDim.new(0, 4)
 PromptInputBox.FocusLost:Connect(function() CustomSystemPromptOverride = PromptInputBox.Text end)
 
--- Provider Panel
+-- Provider Panel (Automatically loops over AVAILABLE_MODELS)
 local function createModelOption(name, path)
     local btn = Instance.new("TextButton", ProviderPanel)
     btn.Size = UDim2.new(1, 0, 0, 26)
@@ -449,6 +479,7 @@ local function createModelOption(name, path)
     btn.TextSize = 9
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function()
+        playSound(9060472719)
         SELECTED_MODEL_PATH = path
         ModelBadge.Text = "  " .. name
         for _, child in ipairs(ProviderPanel:GetChildren()) do
@@ -457,20 +488,7 @@ local function createModelOption(name, path)
         btn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
     end)
 end
--- Expanded Model Selection Paths
-local AVAILABLE_MODELS = {
-    ["Gemini 3.8 Flash"] = "models/gemini-3.8-flash",
-    ["Gemini 3.7 Flash"] = "models/gemini-3.7-flash",
-    ["Gemini 3.6 Flash"] = "models/gemini-3.6-flash",
-    ["Gemini 3.5 Flash Lite"] = "models/gemini-3.5-flash-lite",
-    ["Gemini 3.1 Pro (Preview)"] = "models/gemini-3.1-pro-preview",
-    ["Gemini 3.1 Flash-Lite"] = "models/gemini-3.1-flash-lite",
-    ["Gemini 2.5 Pro"] = "models/gemini-2.5-pro",
-    ["Gemini 2.5 Flash"] = "models/gemini-2.5-flash",
-    ["Gemini 2.5 Flash-Lite"] = "models/gemini-2.5-flash-lite",
-    ["Transcribe / Audio (Gemini 3.8 Audio)"] = "models/gemini-3.8-audio"
-}
--- Remove the old individual createModelOption lines and replace them with this loop:
+
 for name, path in pairs(AVAILABLE_MODELS) do
     createModelOption(name, path)
 end
@@ -487,32 +505,35 @@ BackToChatBtn.TextSize = 9
 Instance.new("UICorner", BackToChatBtn).CornerRadius = UDim.new(0, 4)
 
 BackToChatBtn.Activated:Connect(function()
+        playSound(9060472719)
     SettingsContainer.Visible = false
     ChatContainer.Visible = true
 end)
 
 OpenSettingsBtn.Activated:Connect(function()
+    playSound(9060472719)
     ChatContainer.Visible = false
     SettingsContainer.Visible = true
 end)
 
--- Minimize/Close & Toggle Button Event Handlers
 MinimizeWindowBtn.Activated:Connect(function()
+    playSound(9060472719)
     ChatWindow.Visible = false
     ToggleBtn.Visible = true
 end)
 
 CloseWindowBtn.Activated:Connect(function()
+    playSound(9060472719)
     ChatWindow.Visible = false
     ToggleBtn.Visible = true
 end)
 
 ToggleBtn.Activated:Connect(function()
+    playSound(9060472719)
     ToggleBtn.Visible = false
     ChatWindow.Visible = true
 end)
 
--- UI Messaging Helper Functions (Fixed Width & Sizing Fallback)
 local function appendMessage(sender, text)
     local isUser = (sender == "You")
     
@@ -524,7 +545,7 @@ local function appendMessage(sender, text)
     local bubble = Instance.new("Frame", msgFrame)
     bubble.BackgroundColor3 = isUser and Color3.fromRGB(30, 45, 75) or Color3.fromRGB(35, 40, 55)
     bubble.BorderSizePixel = 0
-        Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 8)
     
     local textLabel = Instance.new("TextLabel", bubble)
     textLabel.Size = UDim2.new(1, -16, 1, -12)
@@ -551,6 +572,7 @@ local function appendMessage(sender, text)
     ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Scale * ChatScroll.AbsoluteSize.Y + ChatScroll.CanvasSize.Y.Offset)
     
     if sender == "Moon AI" then
+        playSound(4590657391) -- Play notification sound on AI response
         local cleaned = cleanCodeString(text)
         if cleaned:match("game:") or cleaned:match("local%s+") or cleaned:match("function") then
             local execBtn = Instance.new("TextButton", bubble)
@@ -564,6 +586,7 @@ local function appendMessage(sender, text)
             Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
             
             execBtn.Activated:Connect(function()
+                playSound(9060472719)
                 local success, err = executeScript(text)
                 if success then
                     execBtn.Text = "✔ Executed"
@@ -590,7 +613,6 @@ local function appendMessage(sender, text)
     end
 end
 
--- Network Request Function to Gemini API
 local function sendToGemini(userPrompt)
     local apiKey = APIInput.Text
     if apiKey == "" then
@@ -681,8 +703,8 @@ local function sendToGemini(userPrompt)
     end)
 end
 
--- Input Action Handlers
 SendMsgBtn.Activated:Connect(function()
+    playSound(9060472719)
     local text = ChatTextBox.Text
     if text ~= "" then
         ChatTextBox.Text = ""
@@ -703,6 +725,7 @@ ChatTextBox.FocusLost:Connect(function(enterPressed)
 end)
 
 ConnectBtn.Activated:Connect(function()
+    playSound(9060472719)
     local key = APIInput.Text
     if key ~= "" then
         saveFile(KEY_FILE, key)
@@ -718,7 +741,6 @@ ConnectBtn.Activated:Connect(function()
     end
 end)
 
--- Initial Startup Check
 if savedKey and savedKey ~= "" then
     KeyWindow.Visible = false
     ChatWindow.Visible = true
