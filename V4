@@ -15,7 +15,7 @@ if PlayerGui:FindFirstChild("MoonAISystem") then
 end
 
 local API_KEY = ""
-local SELECTED_MODEL_PATH = "models/gemini-1.5-flash"
+local SELECTED_MODEL_PATH = "models/gemini-3.5-flash-lite"
 local ConversationHistory = {}
 local KEY_FILE = "MoonAI_Key.json"
 local MAX_HISTORY_ENTRIES = 16
@@ -239,7 +239,7 @@ local CloseWindowBtn = Instance.new("TextButton", TitleBar)
 CloseWindowBtn.Size = UDim2.new(0, 20, 0, 20)
 CloseWindowBtn.Position = UDim2.new(1, -22, 0, 4)
 CloseWindowBtn.BackgroundTransparency = 1
-CloseWindowBtn.Text = "✕"
+CloseWindowBtn.Text = "X"
 CloseWindowBtn.TextColor3 = Color3.fromRGB(160, 170, 190)
 CloseWindowBtn.Font = Enum.Font.GothamBold
 CloseWindowBtn.TextSize = 11
@@ -509,7 +509,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
     ChatWindow.Visible = true
 end)
 
--- UI Messaging Helper Functions
+    -- UI Messaging Helper Functions
 local function appendMessage(sender, text)
     local msgFrame = Instance.new("Frame", ChatScroll)
     msgFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -524,9 +524,14 @@ local function appendMessage(sender, text)
     textLabel.TextSize = 10
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Text = "**" .. sender .. ":** " .. text
     
-    -- Auto adjust size
+    -- Format without stars
+    if sender == "You" then
+        textLabel.Text = "👤: " .. text
+    else
+        textLabel.Text = "🌙: " .. text
+    end
+    
     task.defer(function()
         textLabel.Size = UDim2.new(1, -10, 0, textLabel.TextBounds.Y + 6)
         msgFrame.Size = UDim2.new(1, 0, 0, textLabel.TextBounds.Y + 8)
@@ -534,7 +539,6 @@ local function appendMessage(sender, text)
         ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
     end)
     
-    -- Action buttons for assistant messages containing code
     if sender == "Moon AI" then
         local cleaned = cleanCodeString(text)
         if cleaned:find("local") or cleaned:find("game") then
@@ -551,7 +555,7 @@ local function appendMessage(sender, text)
             execBtn.TextSize = 9
             Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 4)
             
-            execBtn.MouseButton1Click:Connect(function()
+            execBtn.Activated:Connect(function()
                 local success, err = executeScript(cleaned)
                 if success then
                     execBtn.Text = "Executed!"
@@ -561,100 +565,4 @@ local function appendMessage(sender, text)
             end)
         end
     end
-end
-
--- Core API Communication Function
-local function sendToGemini(userInput)
-    local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
-    local environmentContext = scanGameEnvironment()
-    
-    table.insert(ConversationHistory, {
-        role = "user",
-        parts = { { text = environmentContext .. "\n\nUser Request: " .. userInput } }
-    })
-    
-    if #ConversationHistory > MAX_HISTORY_ENTRIES then
-        table.remove(ConversationHistory, 1)
-    end
-    
-    local payload = HttpService:JSONEncode({
-        system_instruction = {
-            parts = { { text = systemInstruction } }
-        },
-        contents = ConversationHistory
-    })
-    
-    local url = "https://generativelanguage.googleapis.com/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
-    if CustomBaseURL ~= "" then
-        url = CustomBaseURL .. "/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
-    end
-    
-    local success, response = pcall(function()
-        return HttpService:RequestAsync({
-            Url = url,
-            Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = payload
-        })
-    end)
-    
-    if success and response.Success then
-        local data = HttpService:JSONDecode(response.Body)
-        if data.candidates and data.candidates[1] and data.candidates[1].content then
-            local reply = data.candidates[1].content.parts[1].text
-            table.insert(ConversationHistory, {
-                role = "model",
-                parts = { { text = reply } }
-            })
-            return reply
-        end
-    end
-    
-    return "Error communicating with Gemini API or invalid key."
-end
-
--- Send Message Event Handling
-SendMsgBtn.MouseButton1Click:Connect(function()
-    local text = ChatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
-    if text == "" then return end
-    
-    ChatTextBox.Text = ""
-    appendMessage("You", text)
-    
-    task.spawn(function()
-        local reply = sendToGemini(text)
-        appendMessage("Moon AI", reply)
-    end)
-end)
-
-ChatTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        SendMsgBtn:Activate()
-    end
-end)
-
-ConnectBtn.MouseButton1Click:Connect(function()
-    local key = APIInput.Text:gsub("^%s*(.-)%s*$", "%1")
-    if key == "" then
-        KWStatus.Text = "Please enter a valid API key!"
-        return
-    end
-    
-    API_KEY = key
-    saveFile(KEY_FILE, key)
-    
-    KWStatus.Text = "Connecting..."
-    task.wait(0.3)
-    
-    KeyWindow.Visible = false
-    ChatWindow.Visible = true
-    KWStatus.Text = ""
-end)
-
--- Auto-open key window if no saved key found
-if savedKey and savedKey ~= "" then
-    API_KEY = savedKey
-    ChatWindow.Visible = true
-else
-    KeyWindow.Visible = true
 end
