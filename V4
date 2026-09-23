@@ -566,3 +566,98 @@ local function appendMessage(sender, text)
         end
     end
 end
+
+-- Core API Communication Function
+local function sendToGemini(userInput)
+    local systemInstruction = (CustomSystemPromptOverride ~= "") and CustomSystemPromptOverride or DefaultSystemInstruction
+    local environmentContext = scanGameEnvironment()
+    
+    table.insert(ConversationHistory, {
+        role = "user",
+        parts = { { text = environmentContext .. "\n\nUser Request: " .. userInput } }
+    })
+    
+    if #ConversationHistory > MAX_HISTORY_ENTRIES then
+        table.remove(ConversationHistory, 1)
+    end
+    
+    local payload = HttpService:JSONEncode({
+        system_instruction = {
+            parts = { { text = systemInstruction } }
+        },
+        contents = ConversationHistory
+    })
+    
+    local url = "https://generativelanguage.googleapis.com/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
+    if CustomBaseURL ~= "" then
+        url = CustomBaseURL .. "/v1beta/" .. SELECTED_MODEL_PATH .. ":generateContent?key=" .. API_KEY
+    end
+    
+    local success, response = pcall(function()
+        return HttpService:RequestAsync({
+            Url = url,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = payload
+        })
+    end)
+    
+    if success and response.Success then
+        local data = HttpService:JSONDecode(response.Body)
+        if data.candidates and data.candidates[1] and data.candidates[1].content then
+            local reply = data.candidates[1].content.parts[1].text
+            table.insert(ConversationHistory, {
+                role = "model",
+                parts = { { text = reply } }
+            })
+            return reply
+        end
+    end
+    
+    return "Error communicating with Gemini API or invalid key."
+end
+
+-- Send Message Event Handling
+SendMsgBtn.Activated:Connect(function()
+    local text = ChatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
+    if text == "" then return end
+    
+    ChatTextBox.Text = ""
+    appendMessage("You", text)
+    
+    task.spawn(function()
+        local reply = sendToGemini(text)
+        appendMessage("Moon AI", reply)
+    end)
+end)
+
+ChatTextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        SendMsgBtn:Activate()
+    end
+end)
+
+ConnectBtn.Activated:Connect(function()
+    local key = APIInput.Text:gsub("^%s*(.-)%s*$", "%1")
+    if key == "" then
+        KWStatus.Text = "Please enter a valid API key!"
+        return
+    end
+    
+    API_KEY = key
+    saveFile(KEY_FILE, key)
+    
+    KWStatus.Text = "Connecting..."
+    task.wait(0.3)
+    
+    KeyWindow.Visible = false
+    ChatWindow.Visible = true
+    KWStatus.Text = ""
+end)
+
+if savedKey and savedKey ~= "" then
+    API_KEY = savedKey
+    ChatWindow.Visible = true
+else
+    KeyWindow.Visible = true
+end
