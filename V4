@@ -458,9 +458,9 @@ local function createModelOption(name, path)
         btn.BackgroundColor3 = Color3.fromRGB(70, 110, 240)
     end)
 end
-createModelOption("Gemini 1.5 Flash", "models/gemini-1.5-flash")
-createModelOption("Gemini 1.5 Pro", "models/gemini-1.5-pro")
-createModelOption("Gemini 2.0 Flash", "models/gemini-2.0-flash-exp")
+createModelOption("Gemini 3.5 Flash Lite", "models/gemini-3.5-flash-lite")
+createModelOption("Gemini 3.6 Flash", "models/gemini-3.6-flash")
+createModelOption("Gemini 3.7 Flash", "models/gemini-3.7-flash")
 
 -- Back to Chat Button
 local BackToChatBtn = Instance.new("TextButton", SettingsContainer)
