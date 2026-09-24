@@ -42,18 +42,15 @@ local AVAILABLE_MODELS = {
 
 local SELECTED_MODEL_PATH = "models/gemini-3.6-flash"
 
--- Sound Effect Helper Function
+-- Sound Effect Helper Function (Using PlayLocalSound for exploit compatibility)
 local function playSound(soundId)
     pcall(function()
         local sound = Instance.new("Sound")
-        sound.SoundId = "rbxassetid://6895073853" -- Built-in Roblox UI click sound
+        sound.SoundId = "rbxassetid://6895073853"
         sound.Volume = 1
-        sound.Parent = SoundService
-        sound:Play()
-        game:GetService("Debris"):AddItem(sound, 2)
+        SoundService:PlayLocalSound(sound)
     end)
 end
-
 
 local DefaultSystemInstruction = [[
 You are Moon AI, an elite and specialized Roblox exploit scripter and execution assistant designed exclusively to write exploits, cheats, bypasses, hacks, and automation scripts for executors.
@@ -295,7 +292,7 @@ MetaBar.BackgroundTransparency = 1
 local ModelBadge = Instance.new("TextLabel", MetaBar)
 ModelBadge.Size = UDim2.new(0, 185, 1, 0)
 ModelBadge.BackgroundColor3 = Color3.fromRGB(28, 32, 42)
-ModelBadge.Text = "  Gemini 3.5 Flash Lite"
+ModelBadge.Text = "  Gemini 3.6 Flash"
 ModelBadge.TextColor3 = Color3.fromRGB(220, 230, 255)
 ModelBadge.Font = Enum.Font.GothamBold
 ModelBadge.TextSize = 9
@@ -506,8 +503,8 @@ BackToChatBtn.TextSize = 9
 Instance.new("UICorner", BackToChatBtn).CornerRadius = UDim.new(0, 4)
 
 BackToChatBtn.Activated:Connect(function()
-        playSound(9060472719)
-    SettingsContainer.Visible = false
+    playSound(9060472719)
+        SettingsContainer.Visible = false
     ChatContainer.Visible = true
 end)
 
@@ -573,7 +570,7 @@ local function appendMessage(sender, text)
     ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Scale * ChatScroll.AbsoluteSize.Y + ChatScroll.CanvasSize.Y.Offset)
     
     if sender == "Moon AI" then
-        playSound(4590657391) -- Play notification sound on AI response
+        playSound(9060472719)
         local cleaned = cleanCodeString(text)
         if cleaned:match("game:") or cleaned:match("local%s+") or cleaned:match("function") then
             local execBtn = Instance.new("TextButton", bubble)
@@ -601,7 +598,7 @@ local function appendMessage(sender, text)
                 else
                     execBtn.Text = "✖ Error"
                     execBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-                    warn("[Moon AI Error]: " .. tostring(err))
+                    warn("[Moon AI Error]: " + tostring(err))
                     task.delay(2, function()
                         if execBtn.Parent then
                             execBtn.Text = "▶ Execute"
